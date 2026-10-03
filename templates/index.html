@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitBuddy - AI Workout Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<script>
+    const form = document.querySelector("form");
+    const button = document.getElementById("generateBtn");
+    const normalText = document.getElementById("generateText");
+    const loadingText = document.getElementById("generateLoading");
+
+    form.addEventListener("submit", function () {
+        button.disabled = true;
+        normalText.style.display = "none";
+        loadingText.style.display = "inline";
+    });
+</script>
+<body class="hero-bg">
+    <main class="container narrow">
+        <section class="card hero-card">
+            <div class="brand">FITBUDDY</div>
+            <h1>AI Fitness Plan Generator</h1>
+            <p class="subtitle">Get a personalized 7-day workout plan powered by Gemini AI.</p>
+
+            {% if error %}
+            <div class="alert error">{{ error }}</div>
+            {% endif %}
+
+            <form action="/generate-workout" method="post" class="form-grid">
+                <label>
+                    Name
+                    <input
+                        type="text"
+                        name="username"
+                        placeholder="Enter your name"
+                        minlength="2"
+                        maxlength="50"
+                        autocomplete="name"
+                        required
+                    >
+                </label>
+                <label>
+                    User ID
+                    <input
+                        type="text"
+                        name="user_id"
+                        placeholder="e.g. FB001"
+                        minlength="3"
+                        maxlength="20"
+                        autocomplete="off"
+                        required
+                    >
+                </label>
+                <label>
+                    Age
+                    <input
+                        type="number"
+                        name="age"
+                        min="13"
+                        max="100"
+                        placeholder="e.g. 21"
+                        required
+                    >
+                </label>
+                <label>
+                    Weight (kg)
+                    <input
+                        type="number"
+                        name="weight"
+                        step="0.1"
+                        min="1"
+                        max="500"
+                        placeholder="e.g. 65"
+                        required
+                    >
+                </label>
+                <label>Fitness Goal
+                    <select name="goal" required>
+                        <option value="weight loss">Weight Loss</option>
+                        <option value="muscle gain">Muscle Gain</option>
+                        <option value="general wellness">General Wellness</option>
+                        <option value="flexibility">Flexibility</option>
+                    </select>
+                </label>
+                <label>Workout Intensity
+                    <select name="intensity" required>
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </label>
+                <button class="button primary full" type="submit" id="generateBtn">
+                    <span id="generateText">Generate Plan</span>
+                    <span id="generateLoading" style="display: none;">Generating your plan...</span>
+                </button>
+                <a href="/sample-plan" class="button secondary full">
+                    View Sample Plan
+                </a>
+            </form>
+
+            <a class="admin-link" href="/view-all-users">View All Users</a>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your FitBuddy Plan</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+
+<script>
+    const updateForm = document.querySelector('form[action="/submit-feedback"]');
+    const updateButton = document.getElementById("updateBtn");
+
+    if (updateForm && updateButton) {
+        updateForm.addEventListener("submit", function () {
+            updateButton.disabled = true;
+            document.getElementById("updateText").style.display = "none";
+            document.getElementById("updateLoading").style.display = "inline";
+        });
+    }
+</script>
+
+<body>
+    <main class="container">
+
+        <div class="topbar">
+            <a class="brand" href="/">FITBUDDY</a>
+            <a class="button secondary" href="/view-all-users">Admin View</a>
+        </div>
+
+        {% if feedback_message %}
+        <div class="alert success">
+            {{ feedback_message }}
+        </div>
+        {% endif %}
+
+
+        <!-- USER PROFILE -->
+        <section class="card profile-card">
+            <div>
+                <span class="eyebrow">PERSONALIZED PLAN</span>
+                <h1>Welcome, {{ username }}!</h1>
+            </div>
+
+            <div class="profile-grid">
+                <div>
+                    <span>Name</span>
+                    <strong>{{ username }}</strong>
+                </div>
+
+                <div>
+                    <span>User ID</span>
+                    <strong>{{ user_id }}</strong>
+                </div>
+
+                <div>
+                    <span>Age</span>
+                    <strong>{{ age }}</strong>
+                </div>
+
+                <div>
+                    <span>Weight</span>
+                    <strong>{{ weight }} kg</strong>
+                </div>
+
+                <div>
+                    <span>Goal</span>
+                    <strong>{{ goal }}</strong>
+                </div>
+
+                <div>
+                    <span>Intensity</span>
+                    <strong>{{ intensity }}</strong>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- WORKOUT PLAN -->
+        <section class="card">
+            <div class="section-title">
+                <span>01</span>
+                <h2>7-Day Workout Plan</h2>
+            </div>
+
+            <!-- Hidden original Gemini response -->
+            <pre id="raw-workout-plan" hidden>{{ workout_plan }}</pre>
+
+            <!-- Formatted workout plan -->
+            <div id="workout-plan" class="plan formatted-plan"></div>
+        </section>
+
+
+        <!-- NUTRITION TIP -->
+        <section class="card tip-card">
+            <div class="section-title">
+                <span>02</span>
+                <h2>Nutrition / Recovery Tip</h2>
+            </div>
+
+            <pre id="raw-nutrition-tip" hidden>{{ nutrition_tip }}</pre>
+            <div id="nutrition-tip" class="formatted-tip"></div>
+        </section>
+
+
+        <!-- FEEDBACK -->
+        <section class="card">
+            <div class="section-title">
+                <span>03</span>
+                <h2>Update Your Plan</h2>
+            </div>
+
+            <p class="muted">
+                Tell FitBuddy what you want to change, such as
+                “include more cardio” or “add more rest days”.
+            </p>
+
+            <form action="/submit-feedback" method="post">
+
+                <input
+                    type="hidden"
+                    name="user_id"
+                    value="{{ user_id }}"
+                >
+
+                <textarea
+                    name="feedback"
+                    rows="5"
+                    placeholder="Enter your feedback..."
+                    required
+                ></textarea>
+
+                <button class="button primary" type="submit" id="updateBtn">
+                    <span id="updateText">Update Workout Plan</span>
+                    <span id="updateLoading" style="display: none;">Updating your plan...</span>
+                </button>
+
+            </form>
+        </section>
+
+    </main>
+
+
+    <!-- MARKDOWN FORMATTER -->
+    <script>
+
+        function escapeHTML(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+
+        function formatGeminiText(text) {
+
+            let safeText = escapeHTML(text);
+
+            let lines = safeText.split("\n");
+
+            let html = "";
+            let inList = false;
+
+            lines.forEach(function(line) {
+
+                line = line.trim();
+
+                // Empty line
+                if (line === "") {
+                    if (inList) {
+                        html += "</ul>";
+                        inList = false;
+                    }
+
+                    html += "<div class='plan-space'></div>";
+                    return;
+                }
+
+
+                // Horizontal line
+                if (/^-{3,}$/.test(line)) {
+
+                    if (inList) {
+                        html += "</ul>";
+                        inList = false;
+                    }
+
+                    html += "<hr>";
+                    return;
+                }
+
+
+                // Main headings using **
+                if (
+                    line.startsWith("**") &&
+                    line.endsWith("**") &&
+                    line.length > 4
+                ) {
+
+                    if (inList) {
+                        html += "</ul>";
+                        inList = false;
+                    }
+
+                    let heading = line
+                        .replace(/^\*\*/, "")
+                        .replace(/\*\*$/, "");
+
+                    html += "<h3>" + heading + "</h3>";
+                    return;
+                }
+
+
+                // Markdown bullet
+                if (line.startsWith("* ")) {
+
+                    if (!inList) {
+                        html += "<ul>";
+                        inList = true;
+                    }
+
+                    let item = line.substring(2);
+
+                    item = item.replace(
+                        /\*\*(.*?)\*\*/g,
+                        "<strong>$1</strong>"
+                    );
+
+                    html += "<li>" + item + "</li>";
+                    return;
+                }
+
+
+                // Markdown dash bullet
+                if (line.startsWith("- ")) {
+
+                    if (!inList) {
+                        html += "<ul>";
+                        inList = true;
+                    }
+
+                    let item = line.substring(2);
+
+                    item = item.replace(
+                        /\*\*(.*?)\*\*/g,
+                        "<strong>$1</strong>"
+                    );
+
+                    html += "<li>" + item + "</li>";
+                    return;
+                }
+
+
+                // Numbered list
+                if (/^\d+\.\s/.test(line)) {
+
+                    if (inList) {
+                        html += "</ul>";
+                        inList = false;
+                    }
+
+                    let item = line.replace(
+                        /^(\d+\.)\s/,
+                        "<strong>$1</strong> "
+                    );
+
+                    item = item.replace(
+                        /\*\*(.*?)\*\*/g,
+                        "<strong>$1</strong>"
+                    );
+
+                    html += "<p class='numbered-item'>" + item + "</p>";
+                    return;
+                }
+
+
+                // Normal paragraph
+                if (inList) {
+                    html += "</ul>";
+                    inList = false;
+                }
+
+                line = line.replace(
+                    /\*\*(.*?)\*\*/g,
+                    "<strong>$1</strong>"
+                );
+
+                html += "<p>" + line + "</p>";
+
+            });
+
+
+            if (inList) {
+                html += "</ul>";
+            }
+
+            return html;
+        }
+
+
+        // Get Gemini responses
+        const workoutText =
+            document.getElementById("raw-workout-plan").textContent;
+
+        const nutritionText =
+            document.getElementById("raw-nutrition-tip").textContent;
+
+
+        // Display formatted content
+        document.getElementById("workout-plan").innerHTML =
+            formatGeminiText(workoutText);
+
+        document.getElementById("nutrition-tip").innerHTML =
+            formatGeminiText(nutritionText);
+
+    </script>
+
+</body>
+</html>
