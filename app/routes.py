@@ -90,8 +90,7 @@ async def generate_workout(
         })
     except Exception as exc:
         logger.exception("Error while processing request")
-        return render_error(request, get_user_friendly_error(exc))
-
+        return render_error(request, f"Error: {type(exc).__name__}: {exc}")
 
 @router.post("/submit-feedback")
 async def submit_feedback(
